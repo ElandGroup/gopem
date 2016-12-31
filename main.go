@@ -16,9 +16,9 @@ func main() {
 	var (
 		certFile = flag.String("cert", "./cert/apiclient_cert.pem", "A PEM eoncoded certificate file.")
 		keyFile  = flag.String("key", "./cert/apiclient_key.pem", "A PEM encoded private key file.")
-		caFile   = flag.String("CA", "./cert/rootca.pem", "A PEM eoncoded CA's certificate file.")
+		//caFile   = flag.String("CA", "./cert/rootca.pem", "A PEM eoncoded CA's certificate file.")
 	)
-	if t, err := CertTransport(certFile, keyFile, caFile); err == nil {
+	if t, err := CertTransport(certFile, keyFile, nil); err == nil {
 		ReqXmlCert(t)
 	}
 
@@ -33,13 +33,16 @@ func CertTransport(certFile *string, keyFile *string, caFile *string) (transport
 		return nil, err
 	}
 
-	// Load CA cert
-	caCert, err := ioutil.ReadFile(*caFile)
-	if err != nil {
-		return nil, err
+	var caCertPool *(x509.CertPool)
+	if caFile != nil {
+		// Load CA cert
+		caCert, err := ioutil.ReadFile(*caFile)
+		if err != nil {
+			return nil, err
+		}
+		caCertPool = x509.NewCertPool()
+		caCertPool.AppendCertsFromPEM(caCert)
 	}
-	caCertPool := x509.NewCertPool()
-	caCertPool.AppendCertsFromPEM(caCert)
 
 	// Setup HTTPS client
 	tlsConfig := &tls.Config{
